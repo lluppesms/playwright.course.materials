@@ -1,0 +1,40 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# Integrated Pipeline that uses a template to run Playwright tests after a build/deploy
+#   Note: most of these templates are not provided in this repository... this is just a shell of an example...
+# ------------------------------------------------------------------------------------------------------------------------
+name: $(date:yyyy).$(date:MM).$(date:dd)$(rev:.r)
+pool:
+  vmImage: ubuntu-latest
+
+trigger: 
+  - none
+
+stages:
+- stage: ScanApplication
+  jobs:
+  - template: templates/scan-code-template.yml
+
+- stage: BuildApplication
+  jobs:
+  - template: templates/build-app-template.yml
+
+- stage: CreateInfrastructure
+  jobs:
+  - template: templates/create-infra-template.yml
+    parameters:
+      environmentName: 'dev'
+
+- stage: DeployApp
+  jobs:
+  - template: templates/deploy-app-template.yml
+    parameters:
+      environmentName: 'dev'
+
+- stage: RunTests
+  jobs:
+    - template: templates/playwright-template.yml
+      parameters:
+        environment: 'dev'
+        testType: 'web'
+        testPath: 'tests'
+        debug: true

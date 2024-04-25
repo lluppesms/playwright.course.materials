@@ -1,0 +1,52 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# Simple Pipeline to run Playwright tests and publish results
+# ------------------------------------------------------------------------------------------------------------------------
+name: $(date:yyyy).$(date:MM).$(date:dd)$(rev:.r)
+pool:
+  vmImage: ubuntu-latest
+
+trigger: 
+  - none
+
+steps:   
+- task: NodeTool@0
+  displayName: 'Install Node.js'
+  inputs:
+    versionSpec: '18'
+
+- task: Npm@1
+  displayName: 'npm clean install'
+  inputs:
+    command: 'ci'
+    verbose: false
+
+- script: npx playwright install --with-deps
+  displayName: 'Install Playwright Browsers'
+
+- script: npx playwright test 'tests'
+  displayName: 'Run all Playwright tests'
+  env:
+    CI: 'true'
+
+#- task: CmdLine@2
+#  displayName: 'Display Directory Tree'
+#  inputs:
+#    script: |
+#      tree $(System.DefaultWorkingDirectory)
+#  condition: succeededOrFailed()
+
+- task: PublishTestResults@2
+  displayName: 'Report Test Results'
+  inputs:
+    testRunTitle: 'Playwright UI Tests'
+    testResultsFormat: 'JUnit'
+    testResultsFiles: $(System.DefaultWorkingDirectory)/test-results/*.xml
+  condition: succeededOrFailed()
+
+- task: PublishPipelineArtifact@1
+  displayName: 'Publish Test Report as Artifact'
+  inputs:
+    targetPath: playwright-report
+    artifact: playwright-report
+    publishLocation: 'pipeline'
+  condition: succeededOrFailed()

@@ -1,0 +1,135 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# Complex Pipeline to run Multiple Playwright Tests against Multiple Environments by user request
+# ------------------------------------------------------------------------------------------------------------------------
+name: $(date:yyyy).$(date:MM).$(date:dd)$(rev:.r)
+pool:
+  vmImage: ubuntu-latest
+
+trigger: 
+  - none
+
+parameters:
+  - name: testsToRun
+    displayName: Tests to Run
+    type: string
+    default: 'example'
+    values:
+      - 'example'
+      - 'web'
+      - 'api'
+      - 'all'
+  - name: runSmokeTestsDev
+    displayName: Run Smoke Tests in Dev
+    type: boolean
+    default: true
+  - name: runSmokeTestsQA
+    displayName: Run Smoke Tests in QA
+    type: boolean
+    default: false
+  - name: runSmokeTestsProd
+    displayName: Run Smoke Tests in Prod
+    type: boolean
+    default: false
+
+stages:
+  - ${{ if and(eq(lower(parameters.runSmokeTestsDev), 'true'), or(eq(lower(parameters.testsToRun), 'example'), eq(lower(parameters.testsToRun), 'all'))) }}:
+    - stage: TestsDevEx
+      displayName: Test Dev Ex
+      jobs:
+        - template: playwright-template.yml
+          parameters:
+            environment: 'dev'
+            testType: 'example'
+            testPath: 'tests'
+            debug: true
+
+  - ${{ if and(eq(lower(parameters.runSmokeTestsDev), 'true'), or(eq(lower(parameters.testsToRun), 'web'), eq(lower(parameters.testsToRun), 'all'))) }}:
+    - stage: TestsDevWeb
+      displayName: Test Dev Web
+      jobs:
+        - template: playwright-template.yml
+          parameters:
+            environment: 'dev'
+            testType: 'web'
+            testPath: 'tests'
+            debug: true
+
+  - ${{ if and(eq(lower(parameters.runSmokeTestsDev), 'true'), or(eq(lower(parameters.testsToRun), 'api'), eq(lower(parameters.testsToRun), 'all'))) }}:
+    - stage: TestsDevAPI
+      displayName: Test Dev API
+      jobs:
+        - template: playwright-template.yml
+          parameters:
+            environment: 'dev'
+            testType:  'api'
+            testPath: 'api/tests'
+            baseTestingUrl: 'https://restful-booker.herokuapp.com'
+            debug: true
+
+  - ${{ if and(eq(lower(parameters.runSmokeTestsQA), 'true'), or(eq(lower(parameters.testsToRun), 'example'), eq(lower(parameters.testsToRun), 'all'))) }}:
+    - stage: TestsQAEx
+      displayName: Test QA Ex
+      jobs:
+        - template: playwright-template.yml
+          parameters:
+            environment: 'qa'
+            testType: 'example'
+            testPath: 'tests'
+            debug: true
+
+  - ${{ if and(eq(lower(parameters.runSmokeTestsQA), 'true'), or(eq(lower(parameters.testsToRun), 'web'), eq(lower(parameters.testsToRun), 'all'))) }}:
+    - stage: TestsQAWeb
+      displayName: Test QA Web
+      jobs:
+        - template: playwright-template.yml
+          parameters:
+            environment: 'qa'
+            testType: 'web'
+            testPath: 'tests'
+            debug: true
+
+  - ${{ if and(eq(lower(parameters.runSmokeTestsQA), 'true'), or(eq(lower(parameters.testsToRun), 'api'), eq(lower(parameters.testsToRun), 'all'))) }}:
+    - stage: TestsQAAPI
+      displayName: Test QA API
+      jobs:
+        - template: playwright-template.yml
+          parameters:
+            environment: 'qa'
+            testType:  'api'
+            testPath: 'api/tests'
+            baseTestingUrl: 'https://restful-booker.herokuapp.com'
+            debug: true
+
+  - ${{ if and(eq(lower(parameters.runSmokeTestsProd), 'true'), or(eq(lower(parameters.testsToRun), 'example'), eq(lower(parameters.testsToRun), 'all'))) }}:
+    - stage: TestsProdEx
+      displayName: Test Prod Ex
+      jobs:
+        - template: playwright-template.yml
+          parameters:
+            environment: 'prod'
+            testType: 'example'
+            testPath: 'tests'
+            debug: true
+
+  - ${{ if and(eq(lower(parameters.runSmokeTestsProd), 'true'), or(eq(lower(parameters.testsToRun), 'web'), eq(lower(parameters.testsToRun), 'all'))) }}:
+    - stage: TestsProdWeb
+      displayName: Test Prod Web
+      jobs:
+        - template: playwright-template.yml
+          parameters:
+            environment: 'prod'
+            testType: 'web'
+            testPath: 'tests'
+            debug: true
+
+  - ${{ if and(eq(lower(parameters.runSmokeTestsProd), 'true'), or(eq(lower(parameters.testsToRun), 'api'), eq(lower(parameters.testsToRun), 'all'))) }}:
+    - stage: TestsProdAPI
+      displayName: Test Prod API
+      jobs:
+        - template: playwright-template.yml
+          parameters:
+            environment: 'prod'
+            testType:  'api'
+            testPath: 'api/tests'
+            baseTestingUrl: 'https://restful-booker.herokuapp.com'
+            debug: true

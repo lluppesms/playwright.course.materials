@@ -1,0 +1,19 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# Simple Pipeline that uses a template to run Playwright tests and publish results
+# ------------------------------------------------------------------------------------------------------------------------
+name: $(date:yyyy).$(date:MM).$(date:dd)$(rev:.r)
+pool:
+  vmImage: ubuntu-latest
+
+trigger: 
+  - none
+
+stages:
+  - stage: RunTests
+    jobs:
+      - template: playwright-template.yml
+        parameters:
+          environment: 'dev'
+          testType: 'web'    # 'api'
+          testPath: 'tests'  # 'api/tests'
+          debug: true

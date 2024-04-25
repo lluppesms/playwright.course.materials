@@ -1,0 +1,22 @@
+{
+  "name": "playwright-api-iceland",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anu-01/playwright-api-iceland.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/anu-01/playwright-api-iceland/issues"
+  },
+  "homepage": "https://github.com/anu-01/playwright-api-iceland#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.43.1",
+    "@types/node": "^20.11.0"
+  }
+}

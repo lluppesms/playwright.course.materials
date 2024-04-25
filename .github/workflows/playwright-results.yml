@@ -1,0 +1,56 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# GHA Workflow to run tests using Playwright and publish the results
+# ------------------------------------------------------------------------------------------------------------------------
+# You may also need to updates permissions for this template to work - see note below
+# ------------------------------------------------------------------------------------------------------------------------
+name: Playwright Tests with Results
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+
+    # Note: Publish test results action needs permission to write a check
+    # You may have to change the default settings for the repo for this to work. You may get the error:
+    #   The nested job 'Build' is requesting 'checks: write, issues: read, pull-requests: read', but is only allowed 'checks: none, issues: none, pull-requests: none'.
+    # Go to Repo Settings -> Actions -> General -> Workflow permissions -> Check: Read and Write Permissions
+    permissions:
+      contents: read
+      issues: read
+      checks: write
+      pull-requests: read
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 18
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Install Playwright Browsers
+      run: npx playwright install --with-deps
+
+    - name: Run Playwright tests
+      run: npx playwright test
+
+    - name: List All Files
+      run: 
+        tree ${{ env.GITHUB_ACTION_PATH }}
+
+    - uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: playwright-report
+        path: playwright-report/
+        retention-days: 30
+
+    - name: Publish Test Results
+      uses: EnricoMi/publish-unit-test-result-action@v2
+      if: always()
+      with:
+        files: |
+          **/test-results/*.xml

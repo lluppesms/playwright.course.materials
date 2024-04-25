@@ -1,0 +1,26 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# Scheduled Pipeline that runs Playwright smoke tests periodically
+# ------------------------------------------------------------------------------------------------------------------------
+name: $(date:yyyy).$(date:MM).$(date:dd)$(rev:.r)
+pool:
+  vmImage: ubuntu-latest
+
+trigger: 
+  - none
+
+schedules:
+- cron: '0 12 * * 3'
+  displayName: Scan Every Wednesday
+  branches:
+    include:
+    - main
+
+stages:
+  - stage: SmokeTests
+    jobs:
+      - template: playwright-template.yml
+        parameters:
+          environment: 'dev'
+          testType: 'web'    # 'api'
+          testPath: 'tests'  # 'api/tests'
+          debug: true

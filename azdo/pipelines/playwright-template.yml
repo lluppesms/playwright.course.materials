@@ -1,0 +1,110 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# Pipeline Template to Run Playwright Tests
+# ------------------------------------------------------------------------------------------------------------------------
+parameters:
+- name: environment
+  default: 'dev'
+- name: testType
+  default: 'ui'
+- name: baseTestingUrl
+  default: ''
+- name: testPath
+  default: 'tests'
+- name: debug
+  default: false
+
+jobs:
+- deployment: Initialize${{ parameters.environment }}Test
+  displayName: Initialize ${{ parameters.environment }} Tests
+  environment: ${{ parameters.environment }}
+
+- job: Run${{ parameters.environment }}${{ parameters.testType }}Test
+  displayName: Run ${{ parameters.environment }} ${{ parameters.testType }} Tests 
+  
+  variables:
+    - name: resultsTitle
+      value: '${{ parameters.testType }} Tests'
+    - name: resultsPath
+      value: 'test-results-${{ parameters.testType }}'
+    - name: resultsFileTitle
+      value: 'playwright-results-${{ parameters.testType }}'
+    - name: configFileName
+      value: 'playwright.config.${{ parameters.testType }}.ts'
+    - name: artifactName
+      value: $(resultsFileTitle)-${{ parameters.environment }}
+    - name: testResultsFilePath
+      value: $(System.DefaultWorkingDirectory)/$(resultsPath)/$(resultsFileTitle).xml
+
+  steps:
+  - ${{ if eq(true, parameters.debug) }}:
+    - task: CmdLine@2
+      inputs:
+        script: |
+          echo "environment=${{ parameters.environment }}"
+          echo "testType=${{ parameters.testType }}"
+          echo "baseTestingUrl=${{ parameters.baseTestingUrl }}"
+          echo "testPath=${{ parameters.testPath }}"
+
+          echo "configFileName=$(configFileName)"
+          echo "resultsTitle=$(resultsTitle)"
+          echo "resultsPath=$(resultsPath)"
+          echo "resultsFileTitle=$(resultsFileTitle)"
+          
+          echo "Directory of pipeline workspace $(Pipeline.Workspace):"
+          tree $(Pipeline.Workspace)
+      displayName: 'Display Variables and Tree'
+      continueOnError: true
+
+  - task: NodeTool@0
+    displayName: 'Install Node.js'
+    inputs:
+      versionSpec: '18'
+
+  - task: Npm@1
+    displayName: 'npm clean install'
+    inputs:
+      command: 'ci'
+      verbose: false
+
+  - script: npx playwright install --with-deps
+    displayName: 'Install Playwright Browsers'
+
+  - ${{ if eq(true, parameters.debug) }}:
+    - task: CmdLine@2
+      displayName: 'Display Files'
+      inputs:
+        script: |
+          echo "Directory of pipeline workspace:"
+          tree $(Pipeline.Workspace)
+      condition: succeededOrFailed()
+
+  - script: npx playwright test ${{ parameters.testPath }} --config $(configFileName)
+    displayName: 'Run Playwright tests'
+    env:
+      CI: 'true'
+      TEST_URL: ${{ parameters.baseTestingUrl }}
+
+  - ${{ if eq(true, parameters.debug) }}:
+    - task: CmdLine@2
+      displayName: 'Display Files'
+      inputs:
+        script: |
+          echo "Directory of pipeline workspace:"
+          tree $(Pipeline.Workspace)
+      condition: succeededOrFailed()
+      
+  - task: PublishTestResults@2
+    displayName: 'Report Test Results'
+    inputs:
+      testRunTitle: $(resultsTitle)
+      testResultsFormat: 'JUnit'
+      testResultsFiles: $(testResultsFilePath)
+    condition: succeededOrFailed()
+
+  - task: PublishPipelineArtifact@1
+    displayName: 'Publish Test Report as Artifact'
+    inputs:
+      targetPath: playwright-report
+      artifact: $(artifactName)
+      publishLocation: 'pipeline'
+    condition: succeededOrFailed()
