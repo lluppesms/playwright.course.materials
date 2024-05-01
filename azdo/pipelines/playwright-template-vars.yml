@@ -44,7 +44,8 @@ jobs:
     - name: PLAYWRIGHT_TEST_PATH
       value: './${{ parameters.testPath }}'
     - name: PLAYWRIGHT_BASE_URL
-      value: 'http://$(playwrightWebsitePrefix)-${{ lower(parameters.environment) }}.azurewebsites.net'
+      value: ${{ parameters.baseTestingUrl }}
+      #value: 'http://$(playwrightWebsitePrefix)-${{ lower(parameters.environment) }}.azurewebsites.net'
 
   steps:
   - ${{ if eq(true, parameters.debug) }}:
