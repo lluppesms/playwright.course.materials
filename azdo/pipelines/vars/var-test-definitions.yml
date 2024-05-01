@@ -1,0 +1,24 @@
+# ----------------------------------------------------------------------------------------------------
+# Reusable variables common to all test - defined in only one place in your project
+# ----------------------------------------------------------------------------------------------------
+variables:
+  - name: playwrightUITestType
+    value: 'ui'
+  - name: playwrightUITestPath
+    value: 'tests'
+  - name: playwrightUITestUrl
+    value: 'https://playwright.dev/'
+
+  - name: playwrightAPITestType
+    value: 'api'
+  - name: playwrightAPITestPath
+    value: 'api/tests'
+  - name: playwrightAPITestUrl
+    value: 'https://restful-booker.herokuapp.com'
+
+  - name: playwrightExampleTestType
+    value: 'example'
+  - name: playwrightExampleTestPath
+    value: 'tests'
+  - name: playwrightExampleTestUrl
+    value: 'https://playwright.dev/'

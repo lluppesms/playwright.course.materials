@@ -1,0 +1,145 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# Pipeline Template to Run Playwright Tests
+# ------------------------------------------------------------------------------------------------------------------------
+parameters:
+- name: environment
+  default: 'DEV'
+- name: testType
+  default: 'ui'
+- name: baseTestingUrl
+  default: ''
+- name: testPath
+  default: 'tests'
+- name: debug
+  default: false
+
+jobs:
+- deployment: Initialize${{ parameters.environment }}${{ parameters.testType }}Tests
+  displayName: Initialize ${{ parameters.environment }} ${{ parameters.testType }} Tests
+  environment: ${{ parameters.environment }}
+
+- job: Run${{ parameters.environment }}${{ parameters.testType }}Tests
+  displayName: Run ${{ parameters.environment }} ${{ parameters.testType }} Tests
+  
+  variables:
+    - name: testResultsTitle
+      value: 'Playwright ${{ parameters.testType }} ${{ parameters.environment }} Tests'
+    - name: testResultsFolderName
+      value: 'test-results-${{ parameters.testType }}-${{ parameters.environment }}'
+    - name: testResultsFileName
+      value: 'playwright-results-${{ parameters.testType }}-${{ parameters.environment }}.xml'
+    - name: testResultsFullPath
+      value: '$(System.DefaultWorkingDirectory)/$(testResultsFolderName)/$(testResultsFileName)'
+
+    - name: configFileName
+      value: 'playwright.config.cicd.ts'
+    - name: configFileFullPath
+      value: '$(Pipeline.Workspace)/s/$(configFileName)'
+
+    - name: pipelineArtifactName
+      value: 'playwright-results-${{ parameters.testType }}-${{ parameters.environment }}'
+
+    - name: PLAYWRIGHT_RESULTS_PATH
+      value: './$(testResultsFolderName)/$(testResultsFileName)'
+    - name: PLAYWRIGHT_TEST_PATH
+      value: './${{ parameters.testPath }}'
+    - name: PLAYWRIGHT_BASE_URL
+      value: 'http://$(playwrightWebsitePrefix)-${{ lower(parameters.environment) }}.azurewebsites.net'
+
+  steps:
+  - ${{ if eq(true, parameters.debug) }}:
+    - task: CmdLine@2
+      inputs:
+        script: |
+          echo "environment=${{ parameters.environment }}"
+          echo "testType=${{ parameters.testType }}"
+          echo "baseTestingUrl=${{ parameters.baseTestingUrl }}"
+          echo "testPath=${{ parameters.testPath }}"
+
+          echo "configFileName=$(configFileName)"
+          echo "testResultsTitle=$(testResultsTitle)"
+          echo "testResultsFolderName=$(testResultsFolderName)"
+          
+          echo "pipelineArtifactName=$(pipelineArtifactName)"
+          echo "testResultsFullPath=$(testResultsFullPath)"
+          echo "configFileFullPath=$(configFileFullPath)"
+
+          echo "PLAYWRIGHT_RESULTS_PATH=$(PLAYWRIGHT_RESULTS_PATH)"
+          echo "PLAYWRIGHT_BASE_URL=$(PLAYWRIGHT_BASE_URL)"
+          echo "PLAYWRIGHT_TEST_PATH=$(PLAYWRIGHT_TEST_PATH)"
+
+          echo "Directory of pipeline workspace $(Pipeline.Workspace):"
+          tree -L 4 $(Pipeline.Workspace)
+      displayName: 'Display Variables and Tree'
+      continueOnError: true
+
+  - task: qetza.replacetokens.replacetokens-task.replacetokens@5
+    displayName: 'Update Playwright Config File'
+    inputs:
+      targetFiles: $(configFileFullPath)
+      tokenPrefix: '#{'
+      tokenSuffix: '}#'
+
+  - task: CmdLine@2
+    displayName: Display Parameter File Contents
+    continueOnError: true
+    inputs:
+      script: |
+        echo "##[group]Contents of Test Config File  $(configFileFullPath)"
+        cat  $(configFileFullPath)
+        echo "##[endgroup]"
+
+  - task: NodeTool@0
+    displayName: 'Install Node.js'
+    inputs:
+      versionSpec: '18'
+
+  - task: Npm@1
+    displayName: 'npm clean install'
+    inputs:
+      command: 'ci'
+      verbose: false
+
+  - script: npx playwright install --with-deps
+    displayName: 'Install Playwright Browsers'
+
+  - ${{ if eq(true, parameters.debug) }}:
+    - task: CmdLine@2
+      displayName: 'Display Files'
+      inputs:
+        script: |
+          echo "Directory of pipeline workspace:"
+          tree -L 4 $(Pipeline.Workspace)
+      condition: succeededOrFailed()
+
+  - script: npx playwright test ${{ parameters.testPath }} --config $(configFileName)
+    displayName: 'Run Playwright tests'
+    env:
+      CI: 'true'
+      TEST_ENVIRONMENT: ${{ parameters.environment }}
+      TEST_URL: ${{ parameters.baseTestingUrl }}
+
+  - ${{ if eq(true, parameters.debug) }}:
+    - task: CmdLine@2
+      displayName: 'Display Files'
+      inputs:
+        script: |
+          echo "Directory of pipeline workspace:"
+          tree -L 4 $(Pipeline.Workspace)
+      condition: succeededOrFailed()
+      
+  - task: PublishTestResults@2
+    displayName: 'Report Test Results'
+    inputs:
+      testRunTitle: $(testResultsTitle)
+      testResultsFormat: 'JUnit'
+      testResultsFiles: $(testResultsFullPath)
+    condition: succeededOrFailed()
+
+  - task: PublishPipelineArtifact@1
+    displayName: 'Publish Test Report as Artifact'
+    inputs:
+      targetPath: playwright-report
+      artifact: $(pipelineArtifactName)
+      publishLocation: 'pipeline'
+    condition: succeededOrFailed()

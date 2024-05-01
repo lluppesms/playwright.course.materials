@@ -1,0 +1,55 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# Pipeline that uses a Variable File to define test specifics and runs Playwright tests
+# Test Config is in the playwright.config.cicd.ts, which is UPDATED by the Replace Tokens task
+# This keeps all the specifics defined in ONE file, and lets you add new test suites by just
+# updating that file and then adding a new stage to your pipelines.
+# This also lets you run the same tests in different environments (DEV/QA/PROD) in one pipeline.
+# ------------------------------------------------------------------------------------------------------------------------
+name: $(date:yyyy).$(date:MM).$(date:dd)$(rev:.r)
+pool:
+  vmImage: ubuntu-latest
+
+trigger: 
+  - none
+
+variables:
+  - template: vars/var-test-definitions.yml
+
+parameters:
+  - name: testsToRun
+    displayName: Tests to Run
+    type: string
+    default: 'all'
+    values:
+      - 'example'
+      - 'web'
+      - 'api'
+      - 'all'
+
+jobs:
+- ${{ if or(eq(lower(parameters.testsToRun), 'ui'), eq(lower(parameters.testsToRun), 'all')) }}:
+  - template: playwright-template-vars.yml
+    parameters:
+      environment: 'dev'
+      testType: ${{ variables.playwrightUITestType }}
+      testPath: ${{ variables.playwrightUITestPath }}
+      baseTestingUrl: ${{ variables.playwrightUITestUrl }}
+      debug: true
+
+- ${{ if or(eq(lower(parameters.testsToRun), 'api'), eq(lower(parameters.testsToRun), 'all')) }}:
+  - template: playwright-template-vars.yml
+    parameters:
+      environment: 'dev'
+      testType: ${{ variables.playwrightAPITestType }}
+      testPath: ${{ variables.playwrightAPITestPath }}
+      baseTestingUrl: ${{ variables.playwrightAPITestUrl }}
+      debug: true
+
+- ${{ if or(eq(lower(parameters.testsToRun), 'example'), eq(lower(parameters.testsToRun), 'all')) }}:
+  - template: playwright-template-vars.yml
+    parameters:
+      environment: 'dev'
+      testType: ${{ variables.playwrightExampleTestType }}
+      testPath: ${{ variables.playwrightExampleTestPath }}
+      baseTestingUrl: ${{ variables.playwrightExampleTestUrl }}
+      debug: true
