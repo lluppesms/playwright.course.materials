@@ -16,7 +16,7 @@
   },
   "homepage": "https://github.com/anu-01/playwright-api-iceland#readme",
   "devDependencies": {
-    "@playwright/test": "^1.43.1",
+    "@playwright/test": "^1.44.1",
     "@types/node": "^20.11.0"
   }
 }
