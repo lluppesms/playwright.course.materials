@@ -48,6 +48,11 @@ export default defineConfig({
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry'
 
+    // video: {
+    //   mode: 'on-first-retry',
+    //   size: { width: 640, height: 480 },
+    // }
+    
     // See: https://playwright.dev/docs/test-use-options
     // // Emulates `'prefers-colors-scheme'` media feature.
     // colorScheme: 'dark',
