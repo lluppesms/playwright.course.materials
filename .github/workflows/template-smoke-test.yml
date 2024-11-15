@@ -1,0 +1,106 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# GHA Reusable Called Workflow to run a Playwright Test
+# ------------------------------------------------------------------------------------------------------------------------
+name: z_template_smoke_test
+
+run-name: Run Smoke Test
+
+on:
+  workflow_call:
+    inputs:
+      envCode:
+        required: true
+        type: string
+      testPath:
+        required: true
+        type: string
+      testConfig:
+        required: false
+        type: string
+        default: 'playwright.config.cicd.ts'
+      testType:
+        required: false
+        type: string
+        default: 'ui'
+  
+jobs:
+  test:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: read
+      checks: write
+      pull-requests: read
+    env:
+      envCode: ${{ inputs.envCode }}
+      configFileName: 'playwright.config.cicd.ts'
+      PLAYWRIGHT_TEST_PATH: './${{ inputs.testPath }}'
+      PLAYWRIGHT_RESULTS_PATH: 'test-results-${{ inputs.testType }}/playwright-results-${{ inputs.testType }}-${{ inputs.envCode }}.xml'
+      PLAYWRIGHT_BASE_URL: 'http://${{ vars.APP_NAME }}-${{ inputs.envCode }}.azurewebsites.net'
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Display Variables
+      run: |-
+        echo "envCode=${{ inputs.envCode }}"
+        echo "PLAYWRIGHT_TEST_PATH=${{ env.PLAYWRIGHT_TEST_PATH }}"
+        echo "PLAYWRIGHT_RESULTS_PATH=${{ env.PLAYWRIGHT_RESULTS_PATH }}"
+        echo "PLAYWRIGHT_BASE_URL=${{ env.PLAYWRIGHT_BASE_URL }}"
+        echo "---------------------------------"
+        echo "##[group]All Variables:"
+        echo "Environments:"
+        echo '${{ toJSON(env) }}'
+        echo "Variables:"
+        echo '${{ toJSON(vars) }}'
+        echo "Secrets:"
+        echo '${{ toJSON(secrets) }}'
+        echo "##[endgroup]"
+        echo "---------------------------------"
+        echo "##[group]Directory of ${{ github.workspace  }}"
+        tree -R ${{ github.workspace  }}
+        echo "##[endgroup]"
+      continue-on-error: true
+
+    - name: Replace Tokens in Config
+      uses: qetza/replacetokens-action@v1
+      with:
+        sources: './${{ env.configFileName }}; !local/ => ${{ env.configFileName }}'
+        variables: '[${{ toJSON(env) }},${{ toJSON(vars) }},${{ toJSON(secrets) }}]' # use environment & variables & secrets
+
+    - name: Display Config File
+      run: |-
+        echo "##[group]Contents of ${{ env.configFileName }}"
+        cat ${{ env.configFileName }}
+        echo "##[endgroup]"
+      continue-on-error: true
+
+    - name: Install Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: lts/*
+
+    - name: Install Dependencies
+      run: npm ci
+
+    - name: Install Playwright
+      run: npx playwright install --with-deps
+
+    - name: Run Playwright Tests
+      run: npx playwright test ${{ inputs.testPath }} --config ${{ env.configFileName }}
+
+    - name: Save Test Results Artifact
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: playwright-report
+        path: playwright-report/
+        retention-days: 30
+
+    - name: Publish Test Results
+      uses: EnricoMi/publish-unit-test-result-action@v2
+      with:
+        files: |
+          **/${{ env.PLAYWRIGHT_RESULTS_PATH }}
+      continue-on-error: true

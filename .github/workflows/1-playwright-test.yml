@@ -1,0 +1,48 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# GHA Workflow to run the Playwright tests
+# ------------------------------------------------------------------------------------------------------------------------
+# FYI: You need to set up some secrets before running this workflows - see CreateGitHubSecrets.md for details.
+# ------------------------------------------------------------------------------------------------------------------------
+name: 1.playwright.test
+
+on:
+  workflow_dispatch:
+    inputs:
+      deployEnvironment:
+        description: 'Environment'
+        required: true
+        default: 'dev' 
+        type: choice
+        options:
+          - dev
+          - qa
+          - prod
+      logLevel:
+        description: 'Log level'
+        required: false
+        default: 'warning' 
+        type: choice
+        options:
+          - info
+          - warning
+          - debug 
+    
+# ------------------------------------------------------------------------------------------------------------------------
+jobs:
+  run-ui-tests:
+    name: Smoke Test ${{ inputs.deployEnvironment }}
+    uses: ./.github/workflows/template-smoke-test.yml
+    secrets: inherit
+    with:
+      envCode: ${{ inputs.deployEnvironment }}
+      testPath: 'web'
+      testType: 'ui'
+
+  run-api-tests:
+    name: Smoke Test ${{ inputs.deployEnvironment }}
+    uses: ./.github/workflows/template-smoke-test.yml
+    secrets: inherit
+    with:
+      envCode: ${{ inputs.deployEnvironment }}
+      testPath: 'api'
+      testType: 'api'

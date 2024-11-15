@@ -14,12 +14,12 @@ parameters:
   default: false
 
 jobs:
-- deployment: Initialize${{ parameters.environment }}Test
+- deployment: Initialize${{ parameters.environment }}Tests
   displayName: Initialize ${{ parameters.environment }} Tests
   environment: ${{ parameters.environment }}
 
-- job: Run${{ parameters.environment }}${{ parameters.testType }}Test
-  displayName: Run ${{ parameters.environment }} ${{ parameters.testType }} Tests 
+- job: Run${{ parameters.environment }}${{ parameters.testType }}Tests
+  displayName: Run ${{ parameters.environment }} ${{ parameters.testType }} Tests
   
   variables:
     - name: resultsTitle
