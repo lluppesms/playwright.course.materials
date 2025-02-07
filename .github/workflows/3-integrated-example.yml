@@ -1,9 +1,12 @@
 # ------------------------------------------------------------------------------------------------------------------------
-# Workflow to deploy Azure Resources and build/deploy WebApp and test the app with Unit Tests and with Playwright UI Tests
+# Integrated Pipeline that uses a template to run Playwright tests after a bicep/build/deploy
+# In addition, it runs unit tests the template-webapp-build.yml template and publishes those results
+# along with the Playwright UI Tests
 # ------------------------------------------------------------------------------------------------------------------------
-# FYI: You need to set up some secrets before running this workflows - see CreateGitHubSecrets.md for details.
+# Note: most of these templates are not provided in this repository... this is just a shell of an example...
+# See https://github.com/lluppesms/dadabase.net8.web/ for a full working example that this is based on.
 # ------------------------------------------------------------------------------------------------------------------------
-name: 3.full.app.example
+name: 3.integrated.example
 
 on: 
   workflow_dispatch:
