@@ -1,0 +1,120 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# Workflow to deploy Azure Resources and build/deploy WebApp and test the app with Unit Tests and with Playwright UI Tests
+# ------------------------------------------------------------------------------------------------------------------------
+# FYI: You need to set up some secrets before running this workflows - see CreateGitHubSecrets.md for details.
+# ------------------------------------------------------------------------------------------------------------------------
+name: 3.full.app.example
+
+on: 
+  workflow_dispatch:
+    inputs:
+      deployEnvironment:
+        description: 'Environment'
+        required: true
+        default: 'dev' 
+        type: choice
+        options:
+          - dev
+          - qa
+          - prod
+      runSecurityScan:
+        description: 'Run Security Scan'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - true
+          - false
+      runCreateInfra:
+        description: 'Deploy Bicep'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - true
+          - false
+      runBuildDeploy:
+        description: 'Build and Deploy App'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - true
+          - false
+      runSmokeTest:
+        description: 'Run Smoke Tests'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - true
+          - false
+      logLevel:
+        description: 'Log level'
+        required: false
+        default: 'warning' 
+        type: choice
+        options:
+          - info
+          - warning
+          - debug 
+
+jobs:
+# ------------------------------------------------------------------------------------------------------------------------
+  scan-code:
+    name: Scan Source Code
+    uses: ./.github/workflows/template-scan-code.yml
+    secrets: inherit
+    with:
+      runSecurityScan: ${{ inputs.runSecurityScan == 'true' }}
+
+  # ------------------------------------------------------------------------------------------------------------------------
+  create-infra:
+    name: Create Infra ${{ inputs.deployEnvironment }}
+    uses: ./.github/workflows/template-create-infra.yml
+    if: inputs.runCreateInfra == 'true' || inputs.runBuildDeploy == 'true'
+    secrets: inherit
+    with:
+      envCode: ${{ inputs.deployEnvironment }}
+      templatePath: './infra/Bicep/'
+      templateFile: 'main.bicep'
+      parameterFile: 'main.bicepparam'
+      runCreateInfra: ${{ inputs.runCreateInfra == 'true' }}
+
+# ------------------------------------------------------------------------------------------------------------------------
+  build-app:
+    name: Build WebApp
+    uses: ./.github/workflows/template-webapp-build.yml
+    if: inputs.runBuildDeploy == 'true' || inputs.runSmokeTest == 'true'
+    needs: create-infra
+    secrets: inherit
+    with:
+      envCode: ${{ inputs.deployEnvironment }}
+      rootDirectory: '${{ vars.APP_PROJECT_FOLDER_NAME }}'
+      projectName: '${{ vars.APP_PROJECT_NAME }}'
+      testDirectory: '${{ vars.APP_TEST_FOLDER_NAME }}'
+      testProjectName: '${{ vars.APP_TEST_PROJECT_NAME }}'
+      testApplication: true
+      listFilesAfterBuild: true
+
+# ------------------------------------------------------------------------------------------------------------------------
+  deploy-app:
+    name: Deploy WebApp ${{ inputs.deployEnvironment }}
+    uses: ./.github/workflows/template-webapp-deploy.yml
+    if: inputs.runBuildDeploy == 'true' || inputs.runSmokeTest == 'true'
+    needs: build-app
+    secrets: inherit
+    with:
+      envCode: ${{ inputs.deployEnvironment }}
+      
+# ------------------------------------------------------------------------------------------------------------------------
+  run-smoke-test:
+    name: Smoke Test ${{ inputs.deployEnvironment }}
+    uses: ./.github/workflows/template-smoke-test.yml
+    if: inputs.runSmokeTest == 'true'
+    needs: deploy-app
+    secrets: inherit
+    with:
+      envCode: ${{ inputs.deployEnvironment }}
+      testPath: 'playwright/ui-tests'
+      testType: 'ui'

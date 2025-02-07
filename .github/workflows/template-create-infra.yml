@@ -1,0 +1,144 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# GHA Reusable Called Workflow to deploy Azure Resources Only
+# ------------------------------------------------------------------------------------------------------------------------
+# FYI: You need to set up some secrets before running this workflows - see CreateGitHubSecrets.md for details.
+# ------------------------------------------------------------------------------------------------------------------------
+name: z_template_deploy_infra
+run-name: Deploy Infra Bicep
+on:
+  workflow_call:
+    inputs:
+      envCode:
+        required: true
+        type: string
+      templatePath: 
+        required: false
+        type: string
+        default: 'infra/Bicep/'
+      templateFile: 
+        required: false
+        type: string
+        default: 'main.bicep'
+      parameterFile: 
+        required: false
+        type: string
+        default: ''
+      parameterFileReplaceTokens: 
+        required: false
+        type: string
+        default: 'true'
+      deploymentMode: 
+        required: false
+        type: string
+        default: 'Incremental'
+      runCreateInfra:
+        required: false
+        default: true
+        type: boolean
+
+# ------------------------------------------------------------------------------------------------------------------------
+jobs:
+  deploy:
+    name: Deploy Bicep
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.envCode }}
+    permissions:
+      id-token: write    
+      contents: read     
+      actions: read    
+      pages: write  
+    
+    # ------------------------------------------------------------------------------------------------------------------------
+    # Variables
+    # ------------------------------------------------------------------------------------------------------------------------
+    env:
+      envCode: ${{ inputs.envCode }}
+      generatedAppEnvName: ${{ vars.APP_NAME }}-${{ inputs.envCode }}
+      generatedResourceGroupName: ${{ vars.RESOURCEGROUP_PREFIX }}_${{ inputs.envCode }}
+
+    # ------------------------------------------------------------------------------------------------------------------------
+    # Actions
+    # ------------------------------------------------------------------------------------------------------------------------
+    steps:
+    - name: Checkout Code
+      if: ${{ inputs.runCreateInfra }}
+      uses: actions/checkout@v4
+
+    - name: Display Variables and Files
+      run: |-
+        echo 'env.generatedAppEnvName=${{ env.generatedAppEnvName }}'
+        echo 'env.generatedResourceGroupName=${{ env.generatedResourceGroupName }}'
+        echo "location=${{ vars.RESOURCEGROUP_LOCATION }}"
+        echo "envCode=${{ env.envCode }}"
+        echo "templatePath=${{ inputs.templatePath }}"
+        echo "templateFile=${{ inputs.templateFile }}"
+        echo "templateFilePath=${{ inputs.templatePath }}${{ inputs.templateFile }}"
+        echo "parameterFile=${{ inputs.parameterFile }}"
+        echo "parameterFilePath=$${{ inputs.templatePath }}${{ inputs.parameterFile }}"
+        echo "parameterFileReplaceTokens=${{ inputs.parameterFileReplaceTokens }}"
+        echo "---------------------------------"
+        echo "##[group]All Variables:"
+        echo '${{ toJSON(env) }}'
+        echo '${{ toJSON(vars) }}'
+        echo '${{ toJSON(secrets) }}'
+        echo "##[endgroup]"
+        echo "---------------------------------"
+        echo "##[group]Directory of ${{ github.workspace  }}"
+        tree -R ${{ github.workspace  }}
+        echo "##[endgroup]"
+      continue-on-error: true
+
+    - name: Replace Tokens
+      if: ${{ inputs.runCreateInfra && inputs.parameterFileReplaceTokens == 'true' }}
+      uses: qetza/replacetokens-action@v1
+      with:
+        sources: '${{ inputs.templatePath }}${{ inputs.parameterFile }}; !local/ => ${{ inputs.parameterFile }}'
+        variables: '[${{ toJSON(env) }},${{ toJSON(vars) }},${{ toJSON(secrets) }}]' # use environment & variables & secrets
+
+    - name: Display Parm File
+      run: |-
+        echo "##[group]Contents of ${{ inputs.templatePath }}${{ inputs.parameterFile }}"
+        cat ${{ inputs.templatePath }}${{ inputs.parameterFile }}
+        echo "##[endgroup]"
+      continue-on-error: true
+      
+    - name: Log into Azure
+      if: ${{ inputs.runCreateInfra }}
+      uses: azure/login@v2
+      with:
+        creds: '{"clientId":"${{ secrets.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"${{ secrets.AZURE_SUBSCRIPTION_ID }}","tenantId":"${{ secrets.AZURE_TENANT_ID }}"}'
+
+    - name: Create Resource Group
+      run: 
+        az group create --name ${{ env.generatedResourceGroupName }} --location ${{ vars.RESOURCEGROUP_LOCATION }} --tags Environment=${{ inputs.envCode }}
+
+    - name: Deploy Azure Resources
+      uses: azure/arm-deploy@v2
+      if: ${{ inputs.runCreateInfra }}
+      id: deploy-bicep
+      with:
+        scope: resourcegroup
+        region: ${{ vars.RESOURCEGROUP_LOCATION }}
+        resourceGroupName: ${{ env.generatedResourceGroupName }}
+        template: ${{ inputs.templatePath }}${{ inputs.templateFile }}
+        parameters: ${{ inputs.templatePath }}${{ inputs.parameterFile }}
+        deploymentMode: ${{ inputs.deploymentMode }} # Must be: Incremental | Complete | Validation
+
+    - name: Display Output
+      if: ${{ inputs.runCreateInfra }}
+      run: |-
+        echo "Subscription: ${{ steps.deploy-bicep.outputs.SUBSCRIPTION_ID }}"
+        echo "Resource Group: ${{ steps.deploy-bicep.outputs.RESOURCE_GROUP_NAME }}"
+        echo "Host Name: ${{ steps.deploy-bicep.outputs.HOST_NAME }}"
+      continue-on-error: true
+
+    - name: Write summary
+      if: ${{ inputs.runCreateInfra }}
+      env:
+        SUMMARY: |
+          # Deployment summary
+          - Target Resource Group: ${{ steps.deploy-bicep.outputs.RESOURCE_GROUP_NAME }}
+          - Application URL: [https://${{ steps.deploy-bicep.outputs.HOST_NAME }}](https://${{ steps.deploy-bicep.outputs.HOST_NAME }})
+      run: echo "$SUMMARY" >> $GITHUB_STEP_SUMMARY
+      continue-on-error: true
