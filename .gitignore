@@ -8,6 +8,6 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 e2e/example.spec.ts
-/dotnet-example/.vs/PlaywrightTests
 /dotnet-example/obj
 /dotnet-example/bin
+/dotnet-example/.vs

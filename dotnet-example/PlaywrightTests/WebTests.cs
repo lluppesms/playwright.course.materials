@@ -30,7 +30,7 @@ public class WebTests : ReportGenerator
         await cartPage.AddToCartAsync("sauce-labs-backpack");
         ReportGenerator.extentTest?.Pass("Adding sauce labs backpack item to the cart ");
         await cartPage.GoToCartAsync();
-         ReportGenerator.extentTest?.Pass("Going to the cart");
+        ReportGenerator.extentTest?.Pass("Going to the cart");
         await checkoutPage.CheckoutAsync();
         ReportGenerator.extentTest?.Pass("Checking out the cart");
         await checkoutPage.EnterCheckoutDetailsAsync("John", "Doe", "12345");
@@ -43,7 +43,7 @@ public class WebTests : ReportGenerator
         ReportGenerator.extentTest?.Pass("Order confirmed successfully");
         await checkoutPage.GoBackToProductsAsync();
         ReportGenerator.extentTest?.Pass("Navigating back to the products page");
-        await loginPage.LogoutAsync(); 
+        await loginPage.LogoutAsync();
         ReportGenerator.extentTest?.Pass("Logging out");
     }
 
