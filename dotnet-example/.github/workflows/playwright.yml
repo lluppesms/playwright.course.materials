@@ -1,0 +1,38 @@
+name: Playwright Tests
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+jobs:
+  test:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup dotnet
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+    - name: Build & Install
+      run: dotnet build
+    - name: Ensure browsers are installed
+      run: pwsh bin/Debug/net8.0/playwright.ps1 install --with-deps
+    - name: Run your tests
+      run: dotnet test
+    - name: Archive Extent Report
+      if: always() # Ensures this step runs even if tests fail
+      run: |
+        mkdir -p reports
+        cp bin/Debug/net8.0/TestReports/*.html reports/
+      continue-on-error: true
+
+    - name: Upload Extent Report as Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: ExtentReport
+        path: reports/
+
+    - name: Add Extent Report Link to Summary
+      if: always() # Ensure this step runs even if tests fail
+      run: echo "💡The Extent Report is available for download from the Artifacts section below." >> $GITHUB_STEP_SUMMARY

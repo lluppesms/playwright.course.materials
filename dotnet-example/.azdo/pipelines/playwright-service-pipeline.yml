@@ -1,0 +1,38 @@
+- task: UseDotNet@2
+  inputs:
+    packageType: 'sdk'
+    version: '8.x'
+    installationPath: $(Agent.ToolsDirectory)/dotnet
+
+- checkout: self
+
+- script: dotnet restore
+  displayName: 'Restore dependencies'
+  workingDirectory: . # update accordingly
+
+- script: dotnet build --configuration Release --no-restore
+  displayName: 'Build'
+  workingDirectory: . # update accordingly
+
+- task: AzureCLI@2
+  displayName: Run Playwright Test  
+    env:
+    PLAYWRIGHT_SERVICE_URL: $(PLAYWRIGHT_SERVICE_URL)
+    PLAYWRIGHT_SERVICE_RUN_ID: ${{ parameters.runIdPrefix }}$(Build.DefinitionName) - $(Build.BuildNumber) - $(System.JobAttempt) 
+  inputs:
+    azureSubscription: My_Service_Connection # Service connection used to authenticate this pipeline with Azure to use the service
+    scriptType: 'pscore'
+    scriptLocation: 'inlineScript'
+    inlineScript: |
+      dotnet test --configuration Release --settings:.runsettings --logger "microsoft-playwright-testing" -- NUnit.NumberOfTestWorkers=20
+  addSpnToEnvironment: true
+  workingDirectory: . # update accordingly
+
+# Publish Extent Report as Artifact
+- task: PublishPipelineArtifact@1
+  displayName: 'Publish Extent Report as Artifact'
+  inputs:
+    targetPath: 'bin/Release/net8.0/TestReports'
+    artifact: 'ExtentReport'
+    publishLocation: 'pipeline'
+  condition: succeededOrFailed()

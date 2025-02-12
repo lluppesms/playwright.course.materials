@@ -1,0 +1,46 @@
+trigger:
+- main
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+# Install .NET SDK
+- task: UseDotNet@2
+  inputs:
+    packageType: sdk
+    version: '8.0.x'
+  displayName: 'Use .NET SDK'
+
+# Build Solution
+- script: dotnet build --configuration Release
+  displayName: 'Build Solution'
+
+# Install Playwright Browsers
+- script: pwsh bin/Release/net8.0/playwright.ps1 install --with-deps
+  displayName: 'Install Playwright Browsers'
+
+# Run Tests
+- script: dotnet test --configuration Release --logger "trx;LogFileName=test-results/results.trx"
+  displayName: 'Run Tests'
+
+# Publish Test Results
+- task: PublishTestResults@2
+  displayName: 'Publish Test Results'
+  inputs:
+    searchFolder: 'test-results'
+    testResultsFormat: 'VSTest'
+    testResultsFiles: '**/*.trx'
+    mergeTestResults: true
+    failTaskOnFailedTests: true
+    testRunTitle: 'My End-To-End Tests'
+  condition: succeededOrFailed()
+
+# Publish Extent Report as Artifact
+- task: PublishPipelineArtifact@1
+  displayName: 'Publish Extent Report as Artifact'
+  inputs:
+    targetPath: 'bin/Release/net8.0/TestReports'
+    artifact: 'ExtentReport'
+    publishLocation: 'pipeline'
+  condition: succeededOrFailed()

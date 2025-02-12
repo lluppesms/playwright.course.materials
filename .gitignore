@@ -10,3 +10,4 @@ node_modules/
 e2e/example.spec.ts
 /dotnet-example/.vs/PlaywrightTests
 /dotnet-example/obj
+/dotnet-example/bin
