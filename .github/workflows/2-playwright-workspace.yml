@@ -4,7 +4,7 @@
 # You may also need to updates permissions for this template to work - see note below
 # ------------------------------------------------------------------------------------------------------------------------
 name: 2-playwright-workspace
-run-name: '2. Playwright Workspace ${{ github.run_id }} by @${{ github.actor }}'
+run-name: '2. Playwright Workspace by @${{ github.actor }} # ${{ github.run_id }}'
 on:
   workflow_dispatch:
 jobs:
@@ -74,7 +74,7 @@ jobs:
         npm ci
         npm install dotenv
         npm init @azure/playwright@latest
-        
+
     - name: Login to Azure with AzPowershell (enableAzPSSession true)
       uses: azure/login@v2
       with:
