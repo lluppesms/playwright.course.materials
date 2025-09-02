@@ -4,6 +4,8 @@
 // See: https://learn.microsoft.com/en-us/azure/app-testing/playwright-workspaces/overview-what-is-microsoft-playwright-workspaces
 // ----------------------------------------------------------------------------------------------------
 // Setup and run: 
+//   Install:
+//     npm init @azure/playwright@latest
 //   Setup: create a local variable
 //     export PLAYWRIGHT_SERVICE_URL=wss://eastus.api.playwright.microsoft.com/playwrightworkspaces/<myguid>/browsers
 //   Command to run this locally:  

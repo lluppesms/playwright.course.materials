@@ -70,13 +70,11 @@ jobs:
         node-version: lts/*
 
     - name: Install Dependencies
-      run: npm ci
-
-    # - name: Install DotEnv
-    #   run: npm install dotenv
-    # - name: Install Playwright
-    #   run: npx playwright install --with-deps
-
+      run: |
+        npm ci
+        npm install dotenv
+        npm init @azure/playwright@latest
+        
     - name: Login to Azure with AzPowershell (enableAzPSSession true)
       uses: azure/login@v2
       with:
