@@ -1,7 +1,6 @@
-/*
-* This file enables Playwright client to connect to remote browsers.
-* It should be placed in the same directory as playwright.config.ts.
-*/
+// This config file is for the original 2024 Playwright Test Service (preview).
+// This has been replaced in 2025 by the Playwright Workspace --> playwright.config.workspace.ts
+//   See: https://learn.microsoft.com/en-us/azure/app-testing/playwright-workspaces/overview-what-is-microsoft-playwright-workspaces
 
 import { defineConfig } from '@playwright/test';
 import config from './playwright.config';

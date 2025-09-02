@@ -1,5 +1,6 @@
 # ------------------------------------------------------------------------------------------------------------------------
-# Pipeline that uses the Playwright Service to run Playwright tests and publishes results
+# [Deprecated] Pipeline that uses the Playwright Test Service to run Playwright tests and publishes results
+# Note: this has been replaced by the 4-playwright-workspace-pipeline.yml
 # ------------------------------------------------------------------------------------------------------------------------
 name: $(date:yyyy).$(date:MM).$(date:dd)$(rev:.r)
 pool:
@@ -29,7 +30,7 @@ steps:
 - script: npx playwright install --with-deps
   displayName: 'Install Playwright Browsers'
 
-- script: npx playwright test 'tests' -c playwright.config.service.ts
+- script: npx playwright test 'tests' -c playwright.config.test-service.ts
   displayName: 'Run all Playwright tests'
   env:
     CI: 'true'
