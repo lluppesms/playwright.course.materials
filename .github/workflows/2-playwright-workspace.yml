@@ -69,17 +69,24 @@ jobs:
     - name: Install Dependencies
       run: npm ci
 
-    - name: Install DotEnv
-      run: npm install dotenv
+    # - name: Install DotEnv
+    #   run: npm install dotenv
+    # - name: Install Playwright
+    #   run: npx playwright install --with-deps
 
-    - name: Install Playwright
-      run: npx playwright install --with-deps
-
+    - name: Login to Azure with AzPowershell (enableAzPSSession true)
+      uses: azure/login@v2
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }} # GitHub Open ID connect values copied in previous steps
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        enable-AzPSSession: true
+        
     - name: Run Playwright tests
       env:
-        PLAYWRIGHT_SERVICE_ACCESS_TOKEN: ${{ secrets.PLAYWRIGHT_SERVICE_ACCESS_TOKEN }}
-        PLAYWRIGHT_SERVICE_URL: ${{ secrets.PLAYWRIGHT_SERVICE_URL }}
-        PLAYWRIGHT_SERVICE_RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}-${{ github.sha }}
+        PLAYWRIGHT_SERVICE_URL: ${{ secrets.PLAYWRIGHT_WORKSPACE_URL }}
+        #PLAYWRIGHT_SERVICE_ACCESS_TOKEN: ${{ secrets.PLAYWRIGHT_SERVICE_ACCESS_TOKEN }}
+        #PLAYWRIGHT_SERVICE_RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}-${{ github.sha }}
       run: npx playwright test ${{ inputs.testPath }} --config ${{ env.configFileName }}
 
     - name: Save Test Results Artifact
