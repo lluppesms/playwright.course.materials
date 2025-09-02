@@ -13,10 +13,13 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
+      id-token: write    
       contents: write
       issues: read
       checks: write
       pull-requests: read
+      actions: read    
+      pages: write  
     env:
       envCode: ${{ inputs.envCode }}
       configFileName: 'playwright.config.workspace.ts'
