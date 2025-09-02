@@ -3,7 +3,8 @@
 # ------------------------------------------------------------------------------------------------------------------------
 # You may also need to updates permissions for this template to work - see note below
 # ------------------------------------------------------------------------------------------------------------------------
-name: Playwright Tests using Service
+name: 2-playwright-workspace
+run-name: '2. Playwright Workspace - by @${{ github.actor }}'
 on:
   workflow_dispatch:
 jobs:
@@ -18,7 +19,7 @@ jobs:
       pull-requests: read
     env:
       envCode: ${{ inputs.envCode }}
-      configFileName: 'playwright.config.cicd.ts'
+      configFileName: 'playwright.config.workspace.ts'
       PLAYWRIGHT_TEST_PATH: './${{ inputs.testPath }}'
       PLAYWRIGHT_RESULTS_PATH: 'test-results-${{ inputs.testType }}/playwright-results-${{ inputs.testType }}-${{ inputs.envCode }}.xml'
       PLAYWRIGHT_BASE_URL: 'http://${{ vars.APP_NAME }}-${{ inputs.envCode }}.azurewebsites.net'

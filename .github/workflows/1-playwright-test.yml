@@ -3,7 +3,8 @@
 # ------------------------------------------------------------------------------------------------------------------------
 # FYI: You need to set up some secrets before running this workflows - see CreateGitHubSecrets.md for details.
 # ------------------------------------------------------------------------------------------------------------------------
-name: 1.playwright.test
+name: 1-Playwright-Test
+run-name: '1. Playwright Test - by @${{ github.actor }}'
 
 on:
   workflow_dispatch:

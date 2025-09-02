@@ -6,7 +6,8 @@
 # Note: most of these templates are not provided in this repository... this is just a shell of an example...
 # See https://github.com/lluppesms/dadabase.net8.web/ for a full working example that this is based on.
 # ------------------------------------------------------------------------------------------------------------------------
-name: 3.integrated.example
+name: 3-integrated-example
+run-name: '3. Integrated Example - by @${{ github.actor }}'
 
 on: 
   workflow_dispatch:
