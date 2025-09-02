@@ -94,10 +94,11 @@ jobs:
         
     - name: Run Playwright tests
       env:
-        PLAYWRIGHT_SERVICE_URL: ${{ secrets.PLAYWRIGHT_WORKSPACE_URL }}
-        #PLAYWRIGHT_SERVICE_ACCESS_TOKEN: ${{ secrets.PLAYWRIGHT_SERVICE_ACCESS_TOKEN }}
-        #PLAYWRIGHT_SERVICE_RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}-${{ github.sha }}
-      run: npx playwright test ${{ inputs.testPath }} --config ${{ env.configFileName }}
+        PLAYWRIGHT_SERVICE_URL: ${{ vars.PLAYWRIGHT_WORKSPACE_URL }}
+      run: npx playwright test ${{ env.PLAYWRIGHT_TEST_PATH }} --config ${{ env.configFileName }}
+
+    #PLAYWRIGHT_SERVICE_ACCESS_TOKEN: ${{ secrets.PLAYWRIGHT_SERVICE_ACCESS_TOKEN }}
+    #PLAYWRIGHT_SERVICE_RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}-${{ github.sha }}
 
     - name: Save Test Results Artifact
       uses: actions/upload-artifact@v4
