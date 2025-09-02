@@ -4,7 +4,7 @@
 # You may also need to updates permissions for this template to work - see note below
 # ------------------------------------------------------------------------------------------------------------------------
 name: 2-playwright-workspace
-run-name: '2. Playwright Workspace - by @${{ github.actor }}'
+run-name: '2. Playwright Workspace ${{ github.run_id }} by @${{ github.actor }}'
 on:
   workflow_dispatch:
 jobs:
