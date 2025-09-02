@@ -1,7 +1,13 @@
 # ------------------------------------------------------------------------------------------------------------------------
 # GHA Workflow to run tests using Playwright using the Playwright Service
 # ------------------------------------------------------------------------------------------------------------------------
-# You may also need to updates permissions for this template to work - see note below
+# This action needs these two repository variables set:
+#   PLAYWRIGHT_WORKSPACE_URL=wss://eastus.api.playwright.microsoft.com/playwrightworkspaces/YOUR-WORKSPACE-GUID/browsers
+#   URL_TO_TEST=https://www.saucedemo.com/   (or whatever URL you are testing!)
+# This action needs and OAUTH Federated Credential set up and these three repository secrets set:
+#   AZURE_CLIENT_ID=GUID
+#   AZURE_SUBSCRIPTION_ID=GUID
+#   AZURE_TENANT_ID=GUID
 # ------------------------------------------------------------------------------------------------------------------------
 name: 2-playwright-workspace
 run-name: '2. Playwright Workspace by @${{ github.actor }} # ${{ github.run_id }}'
@@ -13,6 +19,11 @@ on:
         required: true
         default: 'dev' 
         type: environment
+      testPath:
+        description: Directory with Tests
+        required: true
+        default: './web/tests' 
+        type: string
 jobs:
   test:
     timeout-minutes: 60
@@ -28,11 +39,11 @@ jobs:
       pages: write  
     env:
       deployEnvironment: ${{ inputs.deployEnvironment }}
+      PLAYWRIGHT_TEST_PATH: ${{ inputs.testPath }}
+      PLAYWRIGHT_BASE_URL: ${{ vars.URL_TO_TEST }}
       configFileName: 'playwright.config.workspace.ts'
       importedConfigFileName: 'playwright.config.cicd.ts'
-      PLAYWRIGHT_TEST_PATH: './web/tests'
       PLAYWRIGHT_RESULTS_PATH: 'test-results/playwright-results-${{ inputs.deployEnvironment }}.xml'
-      PLAYWRIGHT_BASE_URL: ${{ vars.URL_TO_TEST }}
 
     steps:
     - uses: actions/checkout@v4
@@ -45,7 +56,6 @@ jobs:
         echo "PLAYWRIGHT_RESULTS_PATH=${{ env.PLAYWRIGHT_RESULTS_PATH }}"
         echo "PLAYWRIGHT_BASE_URL=${{ env.PLAYWRIGHT_BASE_URL }}"
         echo "URL_TO_TEST=${{ vars.URL_TO_TEST }}"
-
         echo "---------------------------------"
         echo "##[group]All Variables:"
         echo "Environments:"
@@ -53,21 +63,19 @@ jobs:
         echo "Variables:"
         echo '${{ toJSON(vars) }}'
         echo "Secrets:"
-        echo '${{ toJSON(secrets) }}'
-        echo "##[endgroup]"
         echo "---------------------------------"
         echo "##[group]Directory of ${{ github.workspace  }}"
         tree -R ${{ github.workspace  }}
         echo "##[endgroup]"
       continue-on-error: true
 
-    - name: Replace Tokens in Config
+    - name: Replace Tokens in Imported Config File
       uses: qetza/replacetokens-action@v1
       with:
         sources: './${{ env.importedConfigFileName }}; !local/ => ${{ env.importedConfigFileName }}'
         variables: '[${{ toJSON(env) }},${{ toJSON(vars) }},${{ toJSON(secrets) }}]' # use environment & variables & secrets
 
-    - name: Display Config File
+    - name: Display Config Files
       run: |-
         echo "##[group]Contents of ${{ env.configFileName }}"
         cat ${{ env.configFileName }}
@@ -100,9 +108,6 @@ jobs:
       env:
         PLAYWRIGHT_SERVICE_URL: ${{ vars.PLAYWRIGHT_WORKSPACE_URL }}
       run: npx playwright test --config ${{ env.configFileName }}
-
-    #PLAYWRIGHT_SERVICE_ACCESS_TOKEN: ${{ secrets.PLAYWRIGHT_SERVICE_ACCESS_TOKEN }}
-    #PLAYWRIGHT_SERVICE_RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}-${{ github.sha }}
 
     - name: Save Test Results Artifact
       uses: actions/upload-artifact@v4
