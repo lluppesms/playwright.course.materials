@@ -29,6 +29,7 @@ jobs:
     env:
       deployEnvironment: ${{ inputs.deployEnvironment }}
       configFileName: 'playwright.config.workspace.ts'
+      importedConfigFileName: 'playwright.config.cicd.ts'
       PLAYWRIGHT_TEST_PATH: './web/tests'
       PLAYWRIGHT_RESULTS_PATH: 'test-results/playwright-results-${{ inputs.deployEnvironment }}.xml'
       PLAYWRIGHT_BASE_URL: ${{ vars.URL_TO_TEST }}
@@ -63,13 +64,16 @@ jobs:
     - name: Replace Tokens in Config
       uses: qetza/replacetokens-action@v1
       with:
-        sources: './${{ env.configFileName }}; !local/ => ${{ env.configFileName }}'
+        sources: './${{ env.importedConfigFileName }}; !local/ => ${{ env.importedConfigFileName }}'
         variables: '[${{ toJSON(env) }},${{ toJSON(vars) }},${{ toJSON(secrets) }}]' # use environment & variables & secrets
 
     - name: Display Config File
       run: |-
         echo "##[group]Contents of ${{ env.configFileName }}"
         cat ${{ env.configFileName }}
+        echo "##[endgroup]"
+        echo "##[group]Contents of ${{ env.importedConfigFileName }}"
+        cat ${{ env.importedConfigFileName }}
         echo "##[endgroup]"
       continue-on-error: true
 
