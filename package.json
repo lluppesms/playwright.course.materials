@@ -16,7 +16,7 @@
   },
   "homepage": "https://github.com/anu-01/playwright-api-iceland#readme",
   "devDependencies": {
-    "@azure/identity": "^4.11.1",
+    "@azure/identity": "^4.13.1",
     "@azure/playwright": "^1.0.0",
     "@playwright/test": "^1.56.1",
     "@types/node": "^20.11.0",
